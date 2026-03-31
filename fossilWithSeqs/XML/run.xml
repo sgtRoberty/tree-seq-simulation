@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate="Standard" beautistatus="" namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.base.evolution.alignment:beast.pkgmgmt:beast.base.core:beast.base.inference:beast.base.evolution.tree.coalescent:beast.pkgmgmt:beast.base.core:beast.base.inference.util:beast.evolution.nuc:beast.base.evolution.operator:beast.base.inference.operator:beast.base.evolution.sitemodel:beast.base.evolution.substitutionmodel:beast.base.evolution.likelihood:beast.base.inference.distribution" required="BEAST.base v2.7.5:BICEPS v1.1.2:bModelTest v1.3.3:OBAMA v1.1.1:ORC v1.1.2:BEASTLabs v2.0.2:feast" version="2.7">
+
+
+    <map name="Uniform" >beast.base.inference.distribution.Uniform</map>
+    <map name="Exponential" >beast.base.inference.distribution.Exponential</map>
+    <map name="LogNormal" >beast.base.inference.distribution.LogNormalDistributionModel</map>
+    <map name="Normal" >beast.base.inference.distribution.Normal</map>
+    <map name="Beta" >beast.base.inference.distribution.Beta</map>
+    <map name="Gamma" >beast.base.inference.distribution.Gamma</map>
+    <map name="LaplaceDistribution" >beast.base.inference.distribution.LaplaceDistribution</map>
+    <map name="prior" >beast.base.inference.distribution.Prior</map>
+    <map name="InverseGamma" >beast.base.inference.distribution.InverseGamma</map>
+    <map name="OneOnX" >beast.base.inference.distribution.OneOnX</map>
+    <map name="Poisson" >beast.base.inference.distribution.Poisson</map>
+    <map name="Dirichlet" >beast.base.inference.distribution.Dirichlet</map>
+
+
+    <!-- <data id="data" spec="beast.base.evolution.alignment.Alignment" dataType="nucleotide">
+        $(seq-data)
+    </data> -->
+    <alignment id="data" spec='feast.fileio.AlignmentFromFasta' fileName="alignment_rep$(index).fa"/>
+
+    <!-- <tree id="trueTree" spec="beast.base.evolution.tree.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="$(tree)"/> -->
+
+    <run id="mcmc" spec="MCMC" chainLength="1000000000">
+        <state id="state" spec="State" storeEvery="10000">
+
+            <!-- <stateNode id="tree" spec="beast.base.evolution.tree.TreeParser" threshold="1E-12" IsLabelledNewick="true" adjustTipHeights="false" newick="$(tree)"/> -->
+            <stateNode id="tree" spec='feast.fileio.TreeFromNewickFile' fileName="truth_time_rep$(index).tre" threshold="1E-12" IsLabelledNewick="true" adjustTipHeights="false"/>
+
+            <parameter id="lambda" spec="parameter.RealParameter" name="stateNode" lower="0">$(lambda)</parameter>
+            <parameter id="mu" spec="parameter.RealParameter" name="stateNode" lower="0">$(mu)</parameter>
+            <parameter id="psi" spec="parameter.RealParameter" name="stateNode" lower="0">$(psi)</parameter>
+            <parameter id="rho" spec="parameter.RealParameter" name="stateNode" lower="0" upper="1">$(rho)</parameter>
+            <parameter id="originTime" spec="parameter.RealParameter" name="stateNode">$(originTime)</parameter>
+
+            <parameter id="gammaShape" spec="parameter.RealParameter" name="stateNode" lower="0">0.5</parameter>
+            <!-- <parameter id="kappa" spec="parameter.RealParameter" name="stateNode" lower="0">5</parameter> -->
+            <parameter id="rateAC" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+            <parameter id="rateAG" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+            <parameter id="rateAT" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+            <parameter id="rateCG" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+            <parameter id="rateGT" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+
+            <stateNode id="rateCategories" spec="parameter.IntegerParameter" dimension="1">1</stateNode>
+            <!-- <parameter id="branchRates" spec="parameter.RealParameter" name="stateNode" lower="0" dimension="1">1</parameter>  -->
+            <parameter id="clockMean" spec="parameter.RealParameter" name="stateNode" lower="0">$(clockMean)</parameter>
+            <parameter id="clockSD" spec="parameter.RealParameter" name="stateNode" lower="0" upper="1">$(clockSD)</parameter>
+
+            <parameter id="oldestSampleAge" spec="parameter.RealParameter" name="stateNode" lower="0">$(oldestSampleAge)</parameter>
+
+        </state>
+
+
+        <distribution id="posterior" spec="CompoundDistribution">
+            <distribution id="prior" spec="CompoundDistribution">
+
+            <distribution id="FBD" spec="beast.evolution.speciation.SABirthDeathModel" birthRate="@lambda" deathRate="@mu" samplingRate="@psi" origin="@originTime" rho="@rho" tree="@tree">
+                <parameter id="removalProbability" spec="parameter.RealParameter" lower="0.0" name="removalProbability" upper="1.0">0.0</parameter>
+            </distribution>
+
+                <prior name="distribution" x="@originTime">
+                    <Exponential name="distr" mean="5" offset="$(oldestSampleAge)"/>
+                </prior>
+                <prior name="distribution" x="@lambda">
+                    <Exponential name="distr" mean="1"/>
+                </prior>
+                <prior name="distribution" x="@mu">
+                    <Exponential name="distr" mean="1"/>
+                </prior>
+                <prior name="distribution" x="@psi">
+                    <Exponential name="distr" mean="1"/>
+                </prior>
+
+                <prior name="distribution" x="@gammaShape">
+                    <Exponential name="distr" mean="0.5"/>
+                 </prior> 
+            <prior id="RateACPrior" name="distribution" x="@rateAC">
+                <Gamma name="distr">
+                    <parameter spec="parameter.RealParameter" estimate="false" name="alpha">0.05</parameter>
+                    <parameter spec="parameter.RealParameter" estimate="false" name="beta">10.0</parameter>
+                </Gamma>
+            </prior>
+            <prior id="RateAGPrior" name="distribution" x="@rateAG">
+                <Gamma name="distr">
+                    <parameter spec="parameter.RealParameter" estimate="false" name="alpha">0.05</parameter>
+                    <parameter spec="parameter.RealParameter" estimate="false" name="beta">20.0</parameter>
+                </Gamma>
+            </prior>
+            <prior id="RateATPrior" name="distribution" x="@rateAT">
+                <Gamma name="distr">
+                    <parameter spec="parameter.RealParameter" estimate="false" name="alpha">0.05</parameter>
+                    <parameter spec="parameter.RealParameter" estimate="false" name="beta">10.0</parameter>
+                </Gamma>
+            </prior>
+            <prior id="RateCGPrior" name="distribution" x="@rateCG">
+                <Gamma name="distr">
+                    <parameter spec="parameter.RealParameter" estimate="false" name="alpha">0.05</parameter>
+                    <parameter spec="parameter.RealParameter" estimate="false" name="beta">10.0</parameter>
+                </Gamma>
+            </prior>
+            <prior id="RateGTPrior" name="distribution" x="@rateGT">
+                <Gamma name="distr">
+                    <parameter spec="parameter.RealParameter" estimate="false" name="alpha">0.05</parameter>
+                    <parameter spec="parameter.RealParameter" estimate="false" name="beta">10.0</parameter>
+                </Gamma>
+            </prior>
+
+                <!-- <prior name="distribution" x="@kappa">
+                    <Exponential name="distr" mean="5"/>
+                 </prior>  -->
+
+                 <prior name="distribution" x="@clockMean">
+                    <Exponential name="distr" mean="1"/>
+                 </prior>
+                 <prior id="clockSDPrior" name="distribution" x="@clockSD">
+                    <Gamma name="distr" alpha="5" beta="0.05"/>
+                 </prior>
+
+            </distribution>
+
+
+            <distribution id="likelihood" spec="beast.base.inference.CompoundDistribution">
+                <distribution data="@data" id="treeLikelihood" spec="TreeLikelihood" tree="@tree">
+                    <siteModel spec="beast.base.evolution.sitemodel.SiteModel" shape="@gammaShape" gammaCategoryCount="4">
+                       <!-- <substModel id="substModel" spec="HKY" kappa="@kappa">
+                            <frequencies spec="Frequencies" frequencies="0.25 0.25 0.25 0.25" />
+                        </substModel> -->
+                        <substModel id="gtr" spec="GTR" rateAC="@rateAC" rateAG="@rateAG" rateAT="@rateAT" rateCG="@rateCG" rateGT="@rateGT">
+                            <parameter id="rateCT" spec="parameter.RealParameter" estimate="false" lower="0.0" name="rateCT">1.0</parameter>
+                            <frequencies spec="Frequencies" frequencies="0.25 0.25 0.25 0.25" />
+                        </substModel>
+                    </siteModel>
+
+                    <branchRateModel id="RelaxedClock" spec="beast.base.evolution.branchratemodel.UCRelaxedClockModel" clock.rate="@clockMean" rateCategories="@rateCategories" tree="@tree">
+                        <LogNormal S="@clockSD" meanInRealSpace="true" name="distr">
+                            <parameter spec="parameter.RealParameter" estimate="false" lower="0.0" name="M" upper="1.0">1.0</parameter>
+                        </LogNormal>
+                    </branchRateModel>
+
+                </distribution>
+            </distribution>
+
+        </distribution>
+
+
+        <!-- Tree operators -->
+        <operator id="YuleSkylineEpochTop.t:tree" spec="EpochFlexOperator" scaleFactor="0.1" tree="@tree" weight="5.0"/>
+        <operator id="YuleSkylineEpochAll.t:tree" spec="EpochFlexOperator" fromOldestTipOnly="false" scaleFactor="0.1" tree="@tree" weight="5.0"/>
+        <operator id="YuleSkylineTreeFlex.t:tree" spec="TreeStretchOperator" scaleFactor="0.01" tree="@tree" weight="5.0"/>
+        <operator id="SAWideFBD.tree" spec="sa.evolution.operators.SAExchange" isNarrow="false"  tree="@tree" weight="3.0"/>
+        <operator id="SANarrowFBD.tree" spec="sa.evolution.operators.SAExchange"  tree="@tree" weight="20.0"/>
+        <operator id="SAUniformOperatorFBD.tree" spec="sa.evolution.operators.SAUniform" tree="@tree" weight="30.0" />
+        <operator id="SATreeRootScalerFBD.tree" spec="sa.evolution.operators.SAScaleOperator" scaleFactor="0.2" tree="@tree" rootOnly="true" weight="3.0" />
+        <operator id="SATreeScalerFBD.tree" spec="sa.evolution.operators.SAScaleOperator" scaleFactor="0.2"  tree="@tree" weight="3.0"/>
+        <operator id="LeafToSampledAncestorJump.t:tree" spec="sa.evolution.operators.LeafToSampledAncestorJump" tree="@tree" weight="10.0"/>
+
+        <!-- Clock model operators -->
+        <operator id="clockMean.scale" spec="kernel.BactrianScaleOperator" parameter="@clockMean" scaleFactor="0.1" weight="5.0"/>
+        <operator id="ORCAdaptableOperatorSampler_sigma" spec="AdaptableOperatorSampler" weight="3.0">
+            <parameter idref="clockSD"/>
+            <!-- <operator id="ORCucldStdevScaler" spec="orc.consoperators.UcldScalerOperator" distr="@BranchRateLogNormalDistribution" rates="@branchRates" scaleFactor="0.5" stdev="@clockSD" weight="1.0">
+                <kernel spec="operator.kernel.KernelDistribution$Bactrian"/>
+            </operator> -->
+            <operator id="ORCUcldStdevRandomWalk" spec="operator.kernel.BactrianRandomWalkOperator" parameter="@clockSD" scaleFactor="0.1" weight="1.0">
+                <kernelDistribution spec="operator.kernel.KernelDistribution$Bactrian"/>
+            </operator>
+            <operator id="ORCUcldStdevScale" spec="kernel.BactrianScaleOperator" parameter="@clockSD" scaleFactor="0.5" upper="10.0" weight="1.0">
+                <kernelDistribution spec="operator.kernel.KernelDistribution$Bactrian"/>
+            </operator>
+            <operator id="ORCSampleFromPriorOperator_sigma" spec="orc.operators.SampleFromPriorOperator" parameter="@clockSD" prior2="@clockSDPrior" weight="1.0"/>
+        </operator>
+
+        <!-- <operator id="ORCAdaptableOperatorSampler_rates_internal" spec="AdaptableOperatorSampler" weight="20.0">
+            <parameter idref="branchRates"/>
+            <tree idref="tree"/>
+            <operator id="ORCRatesRandomWalk" spec="operator.kernel.BactrianRandomWalkOperator" parameter="@branchRates" scaleFactor="0.1" weight="1.0">
+                <kernelDistribution id="KernelDistribution$Bactrian.23" spec="operator.kernel.KernelDistribution$Bactrian"/>
+            </operator>
+            <operator id="ORCRatesScale" spec="kernel.BactrianScaleOperator" parameter="@branchRates" scaleFactor="0.5" upper="10.0" weight="1.0">
+                <kernelDistribution id="KernelDistribution$Bactrian.24" spec="operator.kernel.KernelDistribution$Bactrian"/>
+            </operator>
+        </operator> -->
+
+        <!-- Tree prior operators -->
+        <operator id="originTime.scale" spec="kernel.BactrianScaleOperator" parameter="@originTime" scaleFactor="0.1" weight="5"/>
+        <operator id="lambda.scale" spec="kernel.BactrianScaleOperator" parameter="@lambda" scaleFactor="0.1" weight="5"/>
+        <operator id="mu.scale" spec="kernel.BactrianScaleOperator" parameter="@mu" scaleFactor="0.1" weight="1"/>
+        <operator id="psi.scale" spec="kernel.BactrianScaleOperator" parameter="@psi" scaleFactor="0.1" weight="5"/>
+        <operator id="AVMN.tree.prior" spec="kernel.AdaptableVarianceMultivariateNormalOperator" beta="0.05" burnin="2000" initial="2000" weight="5">
+            <transformations spec="operator.kernel.Transform$LogTransform">
+                <f idref="lambda"/>
+                <f idref="mu"/>
+                <f idref="psi"/>
+            </transformations>
+            <!-- <transformations spec="operator.kernel.Transform$LogitTransform">
+                <f idref="samplingProportion"/>
+            </transformations> -->
+        </operator> 
+        
+        <!-- Site model operators -->
+        <!-- <operator id="KappaScaler.s:dna" spec="kernel.BactrianScaleOperator" parameter="@kappa" scaleFactor="0.5" weight="5"/> -->
+        <operator id="gammaShapeScaler.s:dna" spec="kernel.BactrianScaleOperator" parameter="@gammaShape" scaleFactor="0.5" weight="5"/>
+        <operator id="RateACScaler" spec="ScaleOperator" parameter="@rateAC" scaleFactor="0.5" weight="0.1"/>
+        <operator id="RateAGScaler" spec="ScaleOperator" parameter="@rateAG" scaleFactor="0.5" weight="0.1"/>
+        <operator id="RateATScaler" spec="ScaleOperator" parameter="@rateAT" scaleFactor="0.5" weight="0.1"/>
+        <operator id="RateCGScaler" spec="ScaleOperator" parameter="@rateCG" scaleFactor="0.5" weight="0.1"/>
+        <operator id="RateGTScaler" spec="ScaleOperator" parameter="@rateGT" scaleFactor="0.5" weight="0.1"/>
+
+        <logger id="tracelog" spec="Logger" fileName="$(filebase)-estimatedParameters.log" logEvery="10000" model="@posterior" sanitiseHeaders="true" sort="smart">
+            <log idref="posterior"/>
+            <log idref="likelihood"/>
+            <log idref="prior"/>
+            <!-- <log idref="BranchRatePrior"/> -->
+            <log idref="FBD"/>
+
+            <log id="nSampledAncestors" spec="sa.evolution.tree.SampledAncestorLogger" tree="@tree"/>
+            <log id="treeHeight" spec="beast.base.evolution.tree.TreeStatLogger" tree="@tree"/>
+            <!-- <log idref="netDiv"/>
+            <log idref="turnover"/>
+            <log idref="samplingProportion"/> -->
+            <!-- <log id="netDiv" spec="feast.expressions.ExpCalculator" value="lambda - mu"
+                useCaching="false">
+                <arg idref="lambda" />
+                <arg idref="mu" />
+            </log>
+            <log id="turnover" spec="feast.expressions.ExpCalculator" value="mu/lambda"
+                useCaching="false">
+                <arg idref="lambda" />
+                <arg idref="mu" />
+            </log>
+            <log id="samplingProportion" spec="feast.expressions.ExpCalculator"
+                value="psi/(psi+mu)" useCaching="false">
+                <arg idref="psi" />
+                <arg idref="mu" />
+            </log> -->
+            <log idref="rho"/>
+            <log idref="lambda"/>
+            <log idref="mu"/>
+            <log idref="psi"/>
+            <log idref="originTime"/>
+
+            <!-- <log id="lambda" spec="feast.expressions.ExpCalculator" value="netDiv+mu"
+                useCaching="false">
+                <arg idref="netDiv" />
+                <arg idref="mu" />
+            </log> -->
+            <!-- <log id="mu" spec="feast.expressions.ExpCalculator"
+                value="lambda * turnover"
+                useCaching="false">
+                <arg idref="lambda" />
+                <arg idref="turnover" />
+            </log> -->
+            <!-- <log id="psi" spec="feast.expressions.ExpCalculator"
+                value="samplingProportion*mu/(1-samplingProportion)"
+                useCaching="false">
+                <arg idref="mu" />
+                <arg idref="samplingProportion" />
+            </log> -->
+
+            <!-- <log idref="kappa"/> -->
+            <log idref="gammaShape"/>
+
+            <log idref="clockMean"/>
+            <log idref="clockSD"/>
+
+        </logger>
+
+        
+        <!-- <logger id="tracelog_branchRatesSpikes" spec="Logger" fileName="estimatedBranchRatesSpikes.log" logEvery="5000000" model="@posterior" sanitiseHeaders="true" sort="smart">
+            <log idref="branchRates"/>
+            <log id="weightedSpikes" spec="gammaspike.clockmodel.SpikeSize" spikes="@spikes" spikeMean="@spikeMean"/>
+        </logger> -->
+       
+
+        <logger id="screenlog" spec="Logger" logEvery="10000">
+            <log idref="posterior"/>
+            <log id="ESS.posterior" spec="util.ESS" arg="@posterior"/>
+            <log idref="likelihood"/>
+            <log idref="prior"/>
+
+            <!-- <log idref="lambda"/>
+            <log idref="mu"/>
+            <log idref="psi"/>
+
+            <log idref="rho"/> -->
+
+            <log idref="nSampledAncestors"/>
+            <log idref="oldestSampleAge"/>
+            <log idref="originTime"/>
+            <log idref="clockMean"/>
+        </logger>
+
+        
+        <!-- <logger id="treelog_noMetadata" spec="Logger" fileName="estimatedTrees_noMetadata.trees" logEvery="5000000" mode="tree">
+            <log idref="tree"/>
+        </logger> 
+
+
+        <logger id="treelog" spec="Logger" fileName="estimatedTrees.trees" logEvery="5000000" mode="tree">
+            <log id="TreeWithMetaDataLogger" spec="gammaspike.logger.StumpedTreeLogger" tree="@tree">
+                <stubs idref="stubs" />
+                <metadata idref="branchRates" />
+                <metadata idref="weightedSpikes"/>
+            </log>
+        </logger>  -->
+
+        <!-- <logger id="treelog" spec="Logger" fileName="$(filebase)-estimatedTrees.trees" logEvery="5000000" mode="tree">
+            <log spec="beast.base.evolution.TreeWithMetaDataLogger" tree="@tree">
+                <metadata idref="branchRates" />
+            </log>
+        </logger> -->
+       
+
+        <operatorschedule id="OperatorSchedule" spec="OperatorSchedule" autoOptimizeDelay="5000"/>
+
+
+    </run>
+
+
+</beast>
