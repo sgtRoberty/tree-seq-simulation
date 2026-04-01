@@ -22,7 +22,7 @@
 
     <!-- <tree id="trueTree" spec="beast.base.evolution.tree.TreeParser" IsLabelledNewick="true" adjustTipHeights="false" newick="$(tree)"/> -->
 
-    <run id="mcmc" spec="MCMC" chainLength="1000000000">
+    <run id="mcmc" spec="MCMC" chainLength="1000000">
         <state id="state" spec="State" storeEvery="10000">
 
             <!-- <stateNode id="tree" spec="beast.base.evolution.tree.TreeParser" threshold="1E-12" IsLabelledNewick="true" adjustTipHeights="false" newick="$(tree)"/> -->
@@ -35,7 +35,6 @@
             <parameter id="originTime" spec="parameter.RealParameter" name="stateNode">$(originTime)</parameter>
 
             <parameter id="gammaShape" spec="parameter.RealParameter" name="stateNode" lower="0">0.5</parameter>
-            <!-- <parameter id="kappa" spec="parameter.RealParameter" name="stateNode" lower="0">5</parameter> -->
             <parameter id="rateAC" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
             <parameter id="rateAG" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
             <parameter id="rateAT" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
@@ -106,10 +105,6 @@
                 </Gamma>
             </prior>
 
-                <!-- <prior name="distribution" x="@kappa">
-                    <Exponential name="distr" mean="5"/>
-                 </prior>  -->
-
                  <prior name="distribution" x="@clockMean">
                     <Exponential name="distr" mean="1"/>
                  </prior>
@@ -123,9 +118,6 @@
             <distribution id="likelihood" spec="beast.base.inference.CompoundDistribution">
                 <distribution data="@data" id="treeLikelihood" spec="TreeLikelihood" tree="@tree">
                     <siteModel spec="beast.base.evolution.sitemodel.SiteModel" shape="@gammaShape" gammaCategoryCount="4">
-                       <!-- <substModel id="substModel" spec="HKY" kappa="@kappa">
-                            <frequencies spec="Frequencies" frequencies="0.25 0.25 0.25 0.25" />
-                        </substModel> -->
                         <substModel id="gtr" spec="GTR" rateAC="@rateAC" rateAG="@rateAG" rateAT="@rateAT" rateCG="@rateCG" rateGT="@rateGT">
                             <parameter id="rateCT" spec="parameter.RealParameter" estimate="false" lower="0.0" name="rateCT">1.0</parameter>
                             <frequencies spec="Frequencies" frequencies="0.25 0.25 0.25 0.25" />
@@ -199,7 +191,6 @@
         </operator> 
         
         <!-- Site model operators -->
-        <!-- <operator id="KappaScaler.s:dna" spec="kernel.BactrianScaleOperator" parameter="@kappa" scaleFactor="0.5" weight="5"/> -->
         <operator id="gammaShapeScaler.s:dna" spec="kernel.BactrianScaleOperator" parameter="@gammaShape" scaleFactor="0.5" weight="5"/>
         <operator id="RateACScaler" spec="ScaleOperator" parameter="@rateAC" scaleFactor="0.5" weight="0.1"/>
         <operator id="RateAGScaler" spec="ScaleOperator" parameter="@rateAG" scaleFactor="0.5" weight="0.1"/>
@@ -211,68 +202,26 @@
             <log idref="posterior"/>
             <log idref="likelihood"/>
             <log idref="prior"/>
-            <!-- <log idref="BranchRatePrior"/> -->
             <log idref="FBD"/>
-
             <log id="nSampledAncestors" spec="sa.evolution.tree.SampledAncestorLogger" tree="@tree"/>
             <log id="treeHeight" spec="beast.base.evolution.tree.TreeStatLogger" tree="@tree"/>
-            <!-- <log idref="netDiv"/>
-            <log idref="turnover"/>
-            <log idref="samplingProportion"/> -->
-            <!-- <log id="netDiv" spec="feast.expressions.ExpCalculator" value="lambda - mu"
-                useCaching="false">
-                <arg idref="lambda" />
-                <arg idref="mu" />
-            </log>
-            <log id="turnover" spec="feast.expressions.ExpCalculator" value="mu/lambda"
-                useCaching="false">
-                <arg idref="lambda" />
-                <arg idref="mu" />
-            </log>
-            <log id="samplingProportion" spec="feast.expressions.ExpCalculator"
-                value="psi/(psi+mu)" useCaching="false">
-                <arg idref="psi" />
-                <arg idref="mu" />
-            </log> -->
-            <log idref="rho"/>
             <log idref="lambda"/>
             <log idref="mu"/>
             <log idref="psi"/>
+            <log idref="rho"/>
             <log idref="originTime"/>
-
-            <!-- <log id="lambda" spec="feast.expressions.ExpCalculator" value="netDiv+mu"
-                useCaching="false">
-                <arg idref="netDiv" />
-                <arg idref="mu" />
-            </log> -->
-            <!-- <log id="mu" spec="feast.expressions.ExpCalculator"
-                value="lambda * turnover"
-                useCaching="false">
-                <arg idref="lambda" />
-                <arg idref="turnover" />
-            </log> -->
-            <!-- <log id="psi" spec="feast.expressions.ExpCalculator"
-                value="samplingProportion*mu/(1-samplingProportion)"
-                useCaching="false">
-                <arg idref="mu" />
-                <arg idref="samplingProportion" />
-            </log> -->
-
-            <!-- <log idref="kappa"/> -->
-            <log idref="gammaShape"/>
-
             <log idref="clockMean"/>
             <log idref="clockSD"/>
-
+            <log idref="gammaShape"/>
+            <log idref="rateAC"/>
+            <log idref="rateAG"/>
+            <log idref="rateAT"/>
+            <log idref="rateCG"/>
+            <log idref="rateGT"/>
+            <log idref="oldestSampleAge"/>
         </logger>
 
         
-        <!-- <logger id="tracelog_branchRatesSpikes" spec="Logger" fileName="estimatedBranchRatesSpikes.log" logEvery="5000000" model="@posterior" sanitiseHeaders="true" sort="smart">
-            <log idref="branchRates"/>
-            <log id="weightedSpikes" spec="gammaspike.clockmodel.SpikeSize" spikes="@spikes" spikeMean="@spikeMean"/>
-        </logger> -->
-       
-
         <logger id="screenlog" spec="Logger" logEvery="10000">
             <log idref="posterior"/>
             <log id="ESS.posterior" spec="util.ESS" arg="@posterior"/>
@@ -282,30 +231,16 @@
             <!-- <log idref="lambda"/>
             <log idref="mu"/>
             <log idref="psi"/>
-
             <log idref="rho"/> -->
 
-            <log idref="nSampledAncestors"/>
-            <log idref="oldestSampleAge"/>
-            <log idref="originTime"/>
-            <log idref="clockMean"/>
         </logger>
 
         
-        <!-- <logger id="treelog_noMetadata" spec="Logger" fileName="estimatedTrees_noMetadata.trees" logEvery="5000000" mode="tree">
+        <logger id="treelog" spec="Logger" fileName="$(filebase)-estimatedTrees.trees" logEvery="10000" mode="tree">
             <log idref="tree"/>
         </logger> 
 
-
-        <logger id="treelog" spec="Logger" fileName="estimatedTrees.trees" logEvery="5000000" mode="tree">
-            <log id="TreeWithMetaDataLogger" spec="gammaspike.logger.StumpedTreeLogger" tree="@tree">
-                <stubs idref="stubs" />
-                <metadata idref="branchRates" />
-                <metadata idref="weightedSpikes"/>
-            </log>
-        </logger>  -->
-
-        <!-- <logger id="treelog" spec="Logger" fileName="$(filebase)-estimatedTrees.trees" logEvery="5000000" mode="tree">
+        <!-- <logger id="treelog-branchRates" spec="Logger" fileName="$(filebase)-estimatedTrees-branchRates.trees" logEvery="10000" mode="tree">
             <log spec="beast.base.evolution.TreeWithMetaDataLogger" tree="@tree">
                 <metadata idref="branchRates" />
             </log>
