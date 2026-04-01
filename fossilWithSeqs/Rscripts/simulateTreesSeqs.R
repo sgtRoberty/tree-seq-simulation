@@ -285,6 +285,7 @@ for (i in seq_along(time_trees)) {
     "--alisim", paste0("alignment_rep", i),
     "-t", paste0("truth_distance_rep", i, ".tre"),
     "-m", "GTR+G4{0.5}+F",
+    "-seed", "123",
     "--out-format", "fasta"
   )
 
