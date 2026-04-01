@@ -284,7 +284,7 @@ for (i in seq_along(time_trees)) {
   args <- c(
     "--alisim", paste0("alignment_rep", i),
     "-t", paste0("truth_distance_rep", i, ".tre"),
-    "-m", "GT{1.0,1.0,1.0,1.0,1.0,1.0}R+G4{0.5}+F{0.25,0.25,0.25,0.25}",
+    "-m", "GTR{1.0,1.0,1.0,1.0,1.0,1.0}+G4{0.5}+F{0.25,0.25,0.25,0.25}",
     "--out-format", "fasta"
   )
 
